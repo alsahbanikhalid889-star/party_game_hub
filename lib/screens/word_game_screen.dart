@@ -32,7 +32,7 @@ class _WordGameScreenState extends State<WordGameScreen> {
 
   void _startNewRound() {
     setState(() {
-      currentTopic = WordGameBank.getRandomTopic();
+      currentTopic = WordGameBank.getNextUniqueTopic();
       _word1Controller.clear();
       _word2Controller.clear();
       _word3Controller.clear();
@@ -56,20 +56,33 @@ class _WordGameScreenState extends State<WordGameScreen> {
   void _finishRound() {
     gameTimer?.cancel();
 
-    List<String> playerWords = [
+    // تجميع الكلمات وتنظيفها
+    List<String> rawInputs = [
       _word1Controller.text.trim(),
       _word2Controller.text.trim(),
       _word3Controller.text.trim(),
     ].where((w) => w.isNotEmpty).toList();
 
+    // منع تكرار الكلمات من قبل اللاعب نفسه (حتى لا يكرر الكلمة 3 مرات)
+    List<String> uniquePlayerWords = [];
+    for (var word in rawInputs) {
+      bool exists = uniquePlayerWords.any((w) => TextNormalizer.areWordsMatching(w, word));
+      if (!exists) {
+        uniquePlayerWords.add(word);
+      }
+    }
+
     botWords = WordGameBank.getBotPicks(currentTopic);
 
-    // التحقق من التطابق باستخدام خوارزمية التشابه والتنظيف
+    // مطابقة الكلمات الفريدة مع البوت
     List<String> matches = [];
-    for (var pWord in playerWords) {
-      for (var bWord in botWords) {
-        if (TextNormalizer.areWordsMatching(pWord, bWord)) {
-          matches.add('$pWord ~ $bWord');
+    List<String> remainingBotWords = List.from(botWords);
+
+    for (var pWord in uniquePlayerWords) {
+      for (int i = 0; i < remainingBotWords.length; i++) {
+        if (TextNormalizer.areWordsMatching(pWord, remainingBotWords[i])) {
+          matches.add('$pWord ≈ ${remainingBotWords[i]}');
+          remainingBotWords.removeAt(i);
           break;
         }
       }
@@ -96,6 +109,7 @@ class _WordGameScreenState extends State<WordGameScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('سارق الأفكار (ضد البوت)'),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -104,20 +118,20 @@ class _WordGameScreenState extends State<WordGameScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // بطاقة الموضوع والمؤقت
+            // بطاقة الموضوع
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: const Color(0xFF1E1E2F),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.4)),
+                border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.5)),
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('الموضوع الحالي:', style: TextStyle(color: Colors.white70)),
+                      const Text('الموضوع الحالي:', style: TextStyle(color: Colors.white70, fontSize: 14)),
                       Row(
                         children: [
                           const Icon(Icons.timer, color: Colors.amber, size: 20),
@@ -127,13 +141,14 @@ class _WordGameScreenState extends State<WordGameScreen> {
                             style: TextStyle(
                               color: timeLeft < 10 ? Colors.redAccent : Colors.amber,
                               fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Text(
                     currentTopic.title,
                     textAlign: TextAlign.center,
@@ -151,27 +166,37 @@ class _WordGameScreenState extends State<WordGameScreen> {
             const SizedBox(height: 24),
 
             if (!roundFinished) ...[
-              const Text('اكتب 3 كلمات تتوقع أن يفكر بها خصمك:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
+              const Text(
+                'اكتب 3 كلمات مختلفة تتوقع أن يفكر بها البوت:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 14),
               _buildInputField(_word1Controller, 'الكلمة الأولى'),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _buildInputField(_word2Controller, 'الكلمة الثانية'),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _buildInputField(_word3Controller, 'الكلمة الثالثة'),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _finishRound,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C63FF),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 26),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _finishRound,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6C63FF),
+                    foregroundColor: Colors.white, // نص أبيض ساطع وواضح جداً
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 5,
+                  ),
+                  child: const Text(
+                    'تأكيد وإرسال الكلمات',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text('تأكيد وإرسال الكلمات', style: TextStyle(fontSize: 16)),
               ),
             ] else ...[
-              // شاشة النتائج والمقارنة
+              // عرض النتيجة
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E2F),
                   borderRadius: BorderRadius.circular(16),
@@ -180,38 +205,54 @@ class _WordGameScreenState extends State<WordGameScreen> {
                   children: [
                     Text(
                       'النقاط المكتسبة: $calculatedScore',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.greenAccent),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00E676)),
                     ),
                     const SizedBox(height: 16),
                     const Divider(color: Colors.white24),
-                    const Text('كلمات البوت (الذكاء الاصطناعي):', style: TextStyle(color: Colors.white70)),
                     const SizedBox(height: 8),
+                    const Text('كلمات البوت (الذكاء الاصطناعي):', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
-                      children: botWords.map((w) => Chip(label: Text(w), backgroundColor: Colors.deepPurple)).toList(),
+                      runSpacing: 8,
+                      children: botWords
+                          .map((w) => Chip(
+                                label: Text(w, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                backgroundColor: const Color(0xFF512DA8),
+                              ))
+                          .toList(),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     Text(
                       'التطابقات المحسوبة (${matchedWords.length}):',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     if (matchedWords.isEmpty)
                       const Text('لم يحدث تخاطر هذه الجولة! حاول مجدداً.', style: TextStyle(color: Colors.white54))
                     else
-                      ...matchedWords.map((m) => Text('✔ $m', style: const TextStyle(color: Colors.greenAccent))),
+                      ...matchedWords.map((m) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3.0),
+                            child: Text('✔ $m', style: const TextStyle(color: Color(0xFF00E676), fontSize: 16, fontWeight: FontWeight.bold)),
+                          )),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _startNewRound,
-                icon: const Icon(Icons.refresh),
-                label: const Text('جولة جديدة'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _startNewRound,
+                  icon: const Icon(Icons.refresh, color: Colors.white, size: 22),
+                  label: const Text(
+                    'جولة جديدة',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B), // لون تركوازي غامق مع نص أبيض واضح
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 5,
+                  ),
                 ),
               ),
             ],
@@ -224,12 +265,14 @@ class _WordGameScreenState extends State<WordGameScreen> {
   Widget _buildInputField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
+      style: const TextStyle(color: Colors.white, fontSize: 16),
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white38),
         filled: true,
         fillColor: const Color(0xFF1E1E2F),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       ),
     );
   }
