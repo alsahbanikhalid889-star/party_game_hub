@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'screens/word_game_screen.dart';
 
 void main() {
   runApp(const PartyGameApp());
@@ -67,17 +68,19 @@ class MainMenuScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              _buildGameModeCard(
-                title: 'لعب فردي (ضد الذكاء الاصطناعي)',
-                subtitle: 'تحديات ومراحل بدون إنترنت',
-                icon: Icons.person,
-                color: Colors.deepPurple,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('سيتم تفعيل اللعب الفردي في الخطوة القادمة')),
-                  );
-                },
-              ),
+                         _buildGameModeCard(
+             title: 'لعب فردي (ضد الذكاء الاصطناعي)',
+             subtitle: 'تحديات ومراحل بدون إنترنت',
+             icon: Icons.person,
+             color: Colors.deepPurple,
+             onTap: () {
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(builder: (context) => const WordGameScreen()),
+               );
+             },
+           ),
+
               const SizedBox(height: 16),
               _buildGameModeCard(
                 title: 'جلسة محلية (نفس الغرفة)',
