@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/word_game_screen.dart';
+import 'screens/lobby_screen.dart';
 
 void main() {
   runApp(const PartyGameApp());
@@ -82,17 +83,19 @@ class MainMenuScreen extends StatelessWidget {
            ),
 
               const SizedBox(height: 16),
-              _buildGameModeCard(
-                title: 'جلسة محلية (نفس الغرفة)',
-                subtitle: 'لعب عبر نقطة الاتصال Wi-Fi / Hotspot بدون نت',
-                icon: Icons.wifi,
-                color: Colors.teal,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('جاري إعداد الربط المحلي')),
-                  );
-                },
-              ),
+                         _buildGameModeCard(
+             title: 'جلسة محلية (نفس الغرفة)',
+             subtitle: 'لعب عبر نقطة الاتصال Wi-Fi / Hotspot بدون نت',
+             icon: Icons.wifi,
+             color: Colors.teal,
+             onTap: () {
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(builder: (context) => const LobbyScreen()),
+               );
+             },
+           ),
+
               const SizedBox(height: 16),
               _buildGameModeCard(
                 title: 'لعب أونلاين (عبر الإنترنت)',
