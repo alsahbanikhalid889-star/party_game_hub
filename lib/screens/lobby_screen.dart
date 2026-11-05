@@ -18,17 +18,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool isTeamMode = false;
 
   final List<Color> teamColors = [
-    Colors.grey,        // 0: فردي
-    Colors.blueAccent,  // 1: الفريق الأزرق
-    Colors.redAccent,   // 2: الفريق الأحمر
-    Colors.greenAccent, // 3: الفريق الأخضر
+    Colors.grey,
+    Colors.blueAccent,
+    Colors.redAccent,
+    Colors.greenAccent,
   ];
 
   @override
   void initState() {
     super.initState();
     _net.onPlayersUpdated = (updatedList) {
-      setState(() {});
+      if (mounted) setState(() {});
     };
   }
 
@@ -41,36 +41,126 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   void _createRoom() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      _showMsg('يرجى كتابة اسمك أولاً');
+      return;
+    }
+
     final ip = await _net.getLocalIp();
-    final ok = await _net.startHost(_nameController.text.trim());
-    if (ok) {
+    final error = await _net.startHost(name);
+
+    if (error == null) {
       setState(() {
         inRoom = true;
-        hostIpAddress = ip ?? '127.0.0.1';
+        hostIpAddress = ip ?? '192.168.43.1';
       });
     } else {
-      _showMsg('تعذر إنشاء الغرفة، تأكد من تشغيل نقطة الاتصال Wi-Fi');
+      _showMsg('خطأ أثناء الإنشاء: $error');
     }
   }
 
   void _joinRoom() async {
     final ip = _ipController.text.trim();
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      _showMsg('يرجى كتابة اسمك');
+      return;
+    }
     if (ip.isEmpty) {
       _showMsg('يرجى كتابة عنوان IP المضيف');
       return;
     }
-    final ok = await _net.joinHost(ip, _nameController.text.trim());
-    if (ok) {
+
+    final error = await _net.joinHost(ip, name);
+    if (error == null) {
       setState(() {
         inRoom = true;
       });
     } else {
-      _showMsg('تعذر الاتصال بالمضيف! تأكد من أنك على نفس الشبكة');
+      _showMsg('تعذر الاتصال بالمضيف! تأكد من وجودكما على نفس الشبكة');
     }
   }
 
   void _showMsg(String m) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  }
+
+  // نافذة اختيار اللعبة من بين الألعاب الثلاث
+  void _openGameSelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E2F),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'اختر اللعبة المراد بدء الجولة بها:',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 16),
+              _buildGameOptionTile(
+                title: 'سارق الأفكار (Word Echo)',
+                subtitle: 'تخاطر ذهني ومطابقة كلمات ذكية',
+                icon: Icons.lightbulb,
+                color: Colors.amber,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMsg('تم اختيار سارق الأفكار');
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildGameOptionTile(
+                title: 'غرفة التحكم المشتركة (Circuit Panic)',
+                subtitle: 'تعاون سريع وأوامر لتفادي الانفجار',
+                icon: Icons.bolt,
+                color: Colors.redAccent,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMsg('جاري تحضير غرفة التحكم');
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildGameOptionTile(
+                title: 'المفاوض الخفي (The Blind Negotiator)',
+                subtitle: 'صفقات سرية وكشف المخرب',
+                icon: Icons.vpn_key,
+                color: Colors.deepPurpleAccent,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMsg('جاري تحضير المفاوض الخفي');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGameOptionTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      tileColor: const Color(0xFF282844),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      leading: Icon(icon, color: color, size: 30),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+      onTap: onTap,
+    );
   }
 
   @override
@@ -86,7 +176,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  // واجهة الانضمام أو الإنشاء
   Widget _buildConnectUI() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -109,25 +198,29 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 28),
           TextField(
             controller: _nameController,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               labelText: 'اسمك في اللعبة',
+              labelStyle: const TextStyle(color: Colors.white70),
               filled: true,
               fillColor: const Color(0xFF1E1E2F),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _createRoom,
-            icon: const Icon(Icons.add_box, color: Colors.white),
-            label: const Text('إنشاء غرفة جديدة (أنا المضيف)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _createRoom,
+              icon: const Icon(Icons.add_box, color: Colors.white),
+              label: const Text('إنشاء غرفة جديدة (أنا المضيف)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           const Row(
             children: [
               Expanded(child: Divider(color: Colors.white24)),
@@ -138,22 +231,26 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 20),
           TextField(
             controller: _ipController,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'اكتب IP المضيف (مثال: 192.168.43.1)',
+              hintStyle: const TextStyle(color: Colors.white38),
               filled: true,
               fillColor: const Color(0xFF1E1E2F),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: _joinRoom,
-            icon: const Icon(Icons.login, color: Colors.white),
-            label: const Text('انضمام للغرفة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _joinRoom,
+              icon: const Icon(Icons.login, color: Colors.white),
+              label: const Text('انضمام للغرفة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
         ],
@@ -161,7 +258,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  // واجهة داخل الغرفة وقائمة اللاعبين وتوزيع الفرق
   Widget _buildLobbyUI() {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -170,16 +266,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
         children: [
           if (_net.isHost && hostIpAddress != null)
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.teal.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.tealAccent),
               ),
               child: Text(
-                'أخبر أصدقاءك بكتابة هذا الـ IP للانضمام:\n$hostIpAddress',
+                'عنوانك (IP) للانضمام:\n$hostIpAddress',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.tealAccent),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.tealAccent),
               ),
             ),
           const SizedBox(height: 16),
@@ -242,20 +338,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ),
           ),
           if (_net.isHost)
-            ElevatedButton(
-              onPressed: _net.players.length >= 2
-                  ? () {
-                      _showMsg('جاهزون للانطلاق! سنربط شاشة اختيار اللعبة الجماعية');
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                _net.players.length >= 2 ? 'بدء اللعبة واختيار النمط' : 'في انتظار لاعبين (2 على الأقل)',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _openGameSelectionModal,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'اختيار اللعبة وبدء الجولة',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ),
         ],
