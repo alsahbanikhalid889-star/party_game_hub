@@ -31,7 +31,6 @@ class _CircuitPanicSoloScreenState extends State<CircuitPanicSoloScreen> {
   void _startNextOrder() {
     final rand = Random();
     targetAction = buttonLabels[rand.nextInt(buttonLabels.length)];
-    // يقل الوقت تدريجياً مع زيادة النقاط لزيادة الصعوبة
     timeLeft = max(1.8, 4.0 - (score * 0.15));
 
     timer?.cancel();
@@ -130,7 +129,7 @@ class _CircuitPanicSoloScreenState extends State<CircuitPanicSoloScreen> {
         const SizedBox(height: 12),
         Expanded(
           child: GridView.builder(
-            gridDelegate: const GridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
