@@ -5,7 +5,7 @@ import 'dart:io';
 class LocalPlayer {
   final String id;
   final String name;
-  final int teamIndex; // 0: فردي, 1: فريق 1, 2: فريق 2, 3: فريق 3
+  final int teamIndex;
   final bool isHost;
 
   LocalPlayer({
@@ -44,20 +44,24 @@ class LocalNetworkManager {
   bool isHost = false;
   String myId = '';
 
-  // الحصول على الآي بي المحلي للهاتف (نقطة الاتصال / الراوتر)
   Future<String?> getLocalIp() async {
-    for (var interface in await NetworkInterface.list()) {
-      for (var addr in interface.addresses) {
-        if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
-          return addr.address;
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLinkLocal: false,
+      );
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback) {
+            return addr.address;
+          }
         }
       }
-    }
-    return null;
+    } catch (_) {}
+    return '192.168.43.1'; // الآي بي الافتراضي لنقطة اتصال أندرويد
   }
 
-  // 1. بدء السيرفر للمضيف
-  Future<bool> startHost(String hostName) async {
+  Future<String?> startHost(String hostName) async {
     try {
       _server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
       isHost = true;
@@ -74,20 +78,18 @@ class LocalNetworkManager {
           _clientSockets.remove(client);
         });
       });
-      return true;
+      return null; // نجاح بدون أخطاء
     } catch (e) {
-      return false;
+      return e.toString();
     }
   }
 
-  // 2. انضمام لاعب عادي باستخدام IP المضيف
-  Future<bool> joinHost(String hostIp, String playerName) async {
+  Future<String?> joinHost(String hostIp, String playerName) async {
     try {
-      _myClientSocket = await Socket.connect(hostIp, port, timeout: const Duration(seconds: 4));
+      _myClientSocket = await Socket.connect(hostIp.trim(), port, timeout: const Duration(seconds: 5));
       isHost = false;
       myId = 'player_${DateTime.now().millisecondsSinceEpoch}';
 
-      // إرسال طلب الانضمام
       final joinPayload = {
         'type': 'JOIN',
         'player': LocalPlayer(id: myId, name: playerName, teamIndex: 2).toJson(),
@@ -97,9 +99,9 @@ class LocalNetworkManager {
       _myClientSocket?.listen((data) {
         _handleClientIncomingData(utf8.decode(data));
       });
-      return true;
+      return null;
     } catch (e) {
-      return false;
+      return e.toString();
     }
   }
 
