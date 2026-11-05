@@ -69,33 +69,31 @@ class MainMenuScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-                                    _buildGameModeCard(
-             title: 'لعب فردي (ضد الذكاء الاصطناعي)',
-             subtitle: 'تحديات ومراحل بدون إنترنت',
-             icon: Icons.person,
-             color: Colors.deepPurple,
-             onTap: () {
-               Navigator.push(
-                 context,
-                 MaterialPageRoute(builder: (context) => const SoloGamesMenuScreen()),
-               );
-             },
-           ),
-
+              _buildGameModeCard(
+                title: 'لعب فردي (ضد الذكاء الاصطناعي)',
+                subtitle: 'الألعاب الثلاث مع مراحل وتحديات بدون إنترنت',
+                icon: Icons.person,
+                color: Colors.deepPurple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SoloGamesMenuScreen()),
+                  );
+                },
+              ),
               const SizedBox(height: 16),
-                         _buildGameModeCard(
-             title: 'جلسة محلية (نفس الغرفة)',
-             subtitle: 'لعب عبر نقطة الاتصال Wi-Fi / Hotspot بدون نت',
-             icon: Icons.wifi,
-             color: Colors.teal,
-             onTap: () {
-               Navigator.push(
-                 context,
-                 MaterialPageRoute(builder: (context) => const LobbyScreen()),
-               );
-             },
-           ),
-
+              _buildGameModeCard(
+                title: 'جلسة محلية (نفس الغرفة)',
+                subtitle: 'لعب عبر نقطة الاتصال Wi-Fi / Hotspot بدون نت',
+                icon: Icons.wifi,
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LobbyScreen()),
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               _buildGameModeCard(
                 title: 'لعب أونلاين (عبر الإنترنت)',
@@ -104,7 +102,7 @@ class MainMenuScreen extends StatelessWidget {
                 color: Colors.indigo,
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('جاري تجهيز الخادم السحابي')),
+                    const SnackBar(content: Text('القسم السحابي سيتم ربطه في المرحلة الأخيرة')),
                   );
                 },
               ),
@@ -152,7 +150,7 @@ class MainMenuScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     Text(
