@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/word_game_screen.dart';
+import 'screens/solo_games_menu.dart';
 import 'screens/lobby_screen.dart';
 
 void main() {
@@ -69,7 +69,7 @@ class MainMenuScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-                         _buildGameModeCard(
+                                    _buildGameModeCard(
              title: 'لعب فردي (ضد الذكاء الاصطناعي)',
              subtitle: 'تحديات ومراحل بدون إنترنت',
              icon: Icons.person,
@@ -77,7 +77,7 @@ class MainMenuScreen extends StatelessWidget {
              onTap: () {
                Navigator.push(
                  context,
-                 MaterialPageRoute(builder: (context) => const WordGameScreen()),
+                 MaterialPageRoute(builder: (context) => const SoloGamesMenuScreen()),
                );
              },
            ),
