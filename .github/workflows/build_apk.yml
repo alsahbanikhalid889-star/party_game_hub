@@ -30,9 +30,12 @@ jobs:
         flutter create --org com.partygame.hub --project-name party_game_hub temp_project
         cp -r temp_project/android ./android
         rm -rf temp_project
-        # ترقية إصدار كوتلن لتوافق المكتبات الحديثة
+        # ترقية إصدار كوتلن
         sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.24"/' android/build.gradle || true
         sed -i 's/id "org.jetbrains.kotlin.android" version .*/id "org.jetbrains.kotlin.android" version "1.9.24" apply false/' android/settings.gradle || true
+        
+        # إضافة تصاريح الشبكة المحلية والواي فاي لأندرويد
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>' android/app/src/main/AndroidManifest.xml
 
     - name: Install Dependencies
       run: flutter pub get
